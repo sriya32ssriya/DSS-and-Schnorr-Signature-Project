@@ -1,0 +1,526 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Digital Signature Algorithms Simulator (DSA & Schnorr)</title>
+<style>
+    /* 1. Strive for consistency: consistent fonts, colors, spacing, button styles */
+    body {
+        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        margin: 20px;
+        background-color: #f4f4f9;
+        color: #333;
+    }
+    .container {
+        max-width: 1000px;
+        margin: auto;
+        padding: 20px;
+        background: #fff;
+        border-radius: 10px;
+        box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+    }
+    h1, h2 {
+        color: #0056b3;
+        border-bottom: 2px solid #ccc;
+        padding-bottom: 10px;
+        margin-bottom: 20px;
+    }
+    .algorithm-section {
+        margin-bottom: 40px;
+        padding: 20px;
+        border: 1px solid #ddd;
+        border-radius: 8px;
+    }
+    .input-group {
+        margin-bottom: 15px;
+        display: flex;
+        align-items: center;
+    }
+    .input-group label {
+        flex: 1;
+        margin-right: 10px;
+        font-weight: bold;
+    }
+    .input-group input {
+        flex: 2;
+        padding: 10px;
+        border: 1px solid #ccc;
+        border-radius: 5px;
+    }
+    button {
+        padding: 10px 15px;
+        background-color: #007bff;
+        color: white;
+        border: none;
+        border-radius: 5px;
+        cursor: pointer;
+        transition: background-color 0.3s;
+        margin-right: 10px;
+        user-select: none; /* 7. Support locus of control: prevent accidental text selection */
+    }
+    button:hover {
+        background-color: #0056b3;
+    }
+    /* 3. Offer informative feedback & 5. Offer error prevention & handling */
+    .result-output {
+        margin-top: 15px;
+        padding: 15px;
+        border-radius: 5px;
+        background-color: #e9ecef;
+        border-left: 5px solid #007bff;
+        white-space: pre-wrap;
+        word-wrap: break-word;
+    }
+    .error {
+        border-left-color: #dc3545 !important;
+        background-color: #f8d7da !important;
+        color: #721c24 !important;
+    }
+</style>
+</head>
+<body>
+<div class="container" role="main" aria-label="Digital Signature Algorithms Simulator">
+
+    <h1>Digital Signature Algorithms Simulation 🔒</h1>
+    <p>
+        This interactive tool simulates Key Generation, Signing, and Verification for DSA and Schnorr.
+        Values must be small enough for toy examples, but <strong>BigInt</strong> is used for correct modular arithmetic.
+    </p>
+
+    <!-- 8. Reduce short-term memory load: clear section separation and inline labels -->
+    <div id="dsa-section" class="algorithm-section" aria-labelledby="dsa-title">
+        <h2 id="dsa-title">1. Digital Signature Algorithm (DSA)</h2>
+        
+        <div id="dsa-inputs">
+            <h3>Key Generation (Step 1)</h3>
+            <div class="input-group">
+                <label for="dsa-p">Prime <code>p</code>:</label>
+                <input type="number" id="dsa-p" value="23" min="1" aria-describedby="dsa-p-desc" />
+            </div>
+            <div class="input-group">
+                <label for="dsa-q">Prime <code>q</code> (s.t. <code>(p-1) mod q = 0</code>):</label>
+                <input type="number" id="dsa-q" value="11" min="1" aria-describedby="dsa-q-desc" />
+            </div>
+            <div class="input-group">
+                <label for="dsa-h">Generator <code>h</code> (candidate primitive root):</label>
+                <input type="number" id="dsa-h" value="2" min="1" />
+            </div>
+            <div class="input-group">
+                <label for="dsa-x">Private Key <code>x</code> (<code>1 &lt; x &lt; q</code>):</label>
+                <input type="number" id="dsa-x" value="6" min="1" />
+            </div>
+            <button onclick="dsaSim.keygena()" accesskey="1" aria-label="Generate DSA Keys (Alt+1)">1. Generate Keys</button>
+
+            <div id="dsa-keygen-output" class="result-output" aria-live="polite" aria-atomic="true">
+                Public Key <code>y</code>, Parameters (<code>p, q, g</code>): N/A
+            </div>
+
+            <hr />
+
+            <h3>Signing (Step 2)</h3>
+            <div class="input-group">
+                <label for="dsa-k">Ephemeral Key <code>k</code> (<code>0 &lt; k &lt; q</code>):</label>
+                <input type="number" id="dsa-k" value="5" min="1" />
+            </div>
+            <div class="input-group">
+                <label for="dsa-hm">Hash <code>h(m)</code>:</label>
+                <input type="number" id="dsa-hm" value="10" min="1" />
+            </div>
+            <button onclick="dsaSim.signatgena()" accesskey="2" aria-label="Generate DSA Signature (Alt+2)">2. Generate Signature</button>
+
+            <div id="dsa-sign-output" class="result-output" aria-live="polite" aria-atomic="true">
+                Signature (<code>r, s</code>): N/A
+            </div>
+
+            <hr />
+
+            <h3>Verification (Step 3)</h3>
+            <button onclick="dsaSim.signverf()" accesskey="3" aria-label="Verify DSA Signature (Alt+3)">3. Verify Signature</button>
+            <div id="dsa-verify-output" class="result-output" aria-live="polite" aria-atomic="true">
+                Verification Result: N/A
+            </div>
+        </div>
+    </div>
+
+    <!-- Schnorr Section -->
+    <div id="schnorr-section" class="algorithm-section" aria-labelledby="schnorr-title">
+        <h2 id="schnorr-title">2. Schnorr Signature Toy Version</h2>
+
+        <div id="schnorr-inputs">
+            <h3>Key Generation (Step 1)</h3>
+            <div class="input-group">
+                <label for="schnorr-p">Prime <code>p</code>:</label>
+                <input type="number" id="schnorr-p" value="23" min="1" />
+            </div>
+            <div class="input-group">
+                <label for="schnorr-q">Prime <code>q</code> (s.t. <code>(p-1) mod q = 0</code>):</label>
+                <input type="number" id="schnorr-q" value="11" min="1" />
+            </div>
+            <div class="input-group">
+                <label for="schnorr-g">Generator <code>g</code> (s.t. <code>g^q ≡ 1 mod p</code>):</label>
+                <input type="number" id="schnorr-g" value="2" min="1" />
+            </div>
+            <div class="input-group">
+                <label for="schnorr-x">Private Key <code>x</code> (<code>1 &lt; x &lt; q-1</code>):</label>
+                <input type="number" id="schnorr-x" value="6" min="1" />
+            </div>
+            <button onclick="schnorrSim.keygena()" accesskey="4" aria-label="Generate Schnorr Keys (Alt+4)">1. Generate Keys</button>
+
+            <div id="schnorr-keygen-output" class="result-output" aria-live="polite" aria-atomic="true">
+                Public Key <code>y</code>, Parameters (<code>p, q, g</code>): N/A
+            </div>
+
+            <hr />
+
+            <h3>Signing (Step 2)</h3>
+            <div class="input-group">
+                <label for="schnorr-k">Ephemeral Key <code>k</code> (<code>1 &lt; k &lt; q-1</code>):</label>
+                <input type="number" id="schnorr-k" value="5" min="1" />
+            </div>
+            <div class="input-group">
+                <label for="schnorr-hm">Hash <code>h(m)</code>:</label>
+                <input type="number" id="schnorr-hm" value="10" min="1" />
+            </div>
+            <button onclick="schnorrSim.signatgena()" accesskey="5" aria-label="Generate Schnorr Signature (Alt+5)">2. Generate Signature</button>
+
+            <div id="schnorr-sign-output" class="result-output" aria-live="polite" aria-atomic="true">
+                Signature (<code>e, s</code>): N/A
+            </div>
+
+            <hr />
+
+            <h3>Verification (Step 3)</h3>
+            <button onclick="schnorrSim.signverf()" accesskey="6" aria-label="Verify Schnorr Signature (Alt+6)">3. Verify Signature</button>
+            <div id="schnorr-verify-output" class="result-output" aria-live="polite" aria-atomic="true">
+                Verification Result: N/A
+            </div>
+        </div>
+    </div>
+
+</div>
+
+<script>
+    // Utility Functions
+
+    // 8. Reduce short-term memory load by providing descriptive function names
+    function power(base, exp, mod) {
+        let res = 1n;
+        base = BigInt(base) % BigInt(mod);
+        exp = BigInt(exp);
+        mod = BigInt(mod);
+        while (exp > 0n) {
+            if (exp % 2n === 1n) res = (res * base) % mod;
+            base = (base * base) % mod;
+            exp /= 2n;
+        }
+        return res;
+    }
+
+    function modInverse(a, m) {
+        [a, m] = [BigInt(a), BigInt(m)];
+        if (m === 1n) return 0n;
+        let m0 = m, x0 = 0n, x1 = 1n;
+        while (a > 1n) {
+            let q = a / m;
+            [a, m] = [m, a % m];
+            [x0, x1] = [x1 - q * x0, x0];
+        }
+        if (x1 < 0n) x1 += m0;
+        return x1;
+    }
+
+    function isPrime(n) {
+        n = Number(n);
+        if (n <= 1) return false;
+        if (n <= 3) return true;
+        if (n % 2 === 0 || n % 3 === 0) return false;
+        for (let i = 5; i * i <= n; i += 6) {
+            if (n % i === 0 || n % (i + 2) === 0) return false;
+        }
+        return true;
+    }
+
+    function isPrimitiveRoot(h, p) {
+        h = BigInt(h);
+        p = BigInt(p);
+        if (power(h, p - 1n, p) !== 1n) return false;
+
+        let phi = p - 1n;
+        // Check for prime factors of phi - here just 2, 3, 5 to keep simple
+        let factors = [2n, 3n, 5n];
+        for (let factor of factors) {
+            if (phi % factor === 0n) {
+                if (power(h, phi / factor, p) === 1n) return false;
+            }
+        }
+        return true;
+    }
+
+    // 3. Offer informative feedback helper function with error class option
+    function outputResult(elementId, text, isError = false) {
+        const el = document.getElementById(elementId);
+        el.textContent = text;
+        if (isError) {
+            el.classList.add('error');
+        } else {
+            el.classList.remove('error');
+        }
+    }
+
+    // === DSA Simulator Object ===
+    const dsaSim = {
+        p: 0n, q: 0n, h: 0n, g: 0n,
+        x: 0n, y: 0n, k: 0n,
+        r: 0n, s: 0n,
+        hm: 0n,
+        
+        // 5. Prevent errors with input validation and user guidance
+        keygena() {
+            const p = BigInt(document.getElementById('dsa-p').value);
+            const q = BigInt(document.getElementById('dsa-q').value);
+            const h = BigInt(document.getElementById('dsa-h').value);
+            const x = BigInt(document.getElementById('dsa-x').value);
+
+            // Validation
+            if (!isPrime(p)) {
+                outputResult('dsa-keygen-output', 'Error: p must be prime.', true);
+                return;
+            }
+            if (!isPrime(q)) {
+                outputResult('dsa-keygen-output', 'Error: q must be prime.', true);
+                return;
+            }
+            if ((p - 1n) % q !== 0n) {
+                outputResult('dsa-keygen-output', 'Error: (p-1) must be divisible by q.', true);
+                return;
+            }
+            if (x <= 0n || x >= q) {
+                outputResult('dsa-keygen-output', 'Error: Private key x must be 1 < x < q.', true);
+                return;
+            }
+            if (h <= 1n || h >= p - 1n) {
+                outputResult('dsa-keygen-output', 'Error: h must be in range 1 < h < p-1.', true);
+                return;
+            }
+
+            // Calculate g = h^{(p-1)/q} mod p
+            const g = power(h, (p - 1n) / q, p);
+            if (g === 1n) {
+                outputResult('dsa-keygen-output', 'Error: g = 1, h is not a proper generator.', true);
+                return;
+            }
+
+            const y = power(g, x, p);
+
+            // Save state (7. Support locus of control)
+            this.p = p; this.q = q; this.h = h; this.g = g;
+            this.x = x; this.y = y;
+
+            outputResult('dsa-keygen-output', `DSA Key Generation Successful!\nParameters:\np = ${p}\nq = ${q}\ng = ${g}\n\nPublic key y = ${y}`, false);
+        },
+
+        signatgena() {
+            const k = BigInt(document.getElementById('dsa-k').value);
+            const hm = BigInt(document.getElementById('dsa-hm').value);
+
+            if (this.p === 0n) {
+                outputResult('dsa-sign-output', 'Error: Generate keys first.', true);
+                return;
+            }
+            if (k <= 0n || k >= this.q) {
+                outputResult('dsa-sign-output', 'Error: k must be 0 < k < q.', true);
+                return;
+            }
+
+            const r = power(this.g, k, this.p) % this.q;
+            if (r === 0n) {
+                outputResult('dsa-sign-output', 'Error: r is 0, choose a different k.', true);
+                return;
+            }
+
+            const kinv = modInverse(k, this.q);
+            if (kinv === 0n) {
+                outputResult('dsa-sign-output', 'Error: modular inverse of k does not exist.', true);
+                return;
+            }
+
+            const s = (kinv * (hm + this.x * r)) % this.q;
+            if (s === 0n) {
+                outputResult('dsa-sign-output', 'Error: s is 0, choose a different k.', true);
+                return;
+            }
+
+            this.k = k;
+            this.r = r;
+            this.s = s;
+            this.hm = hm;
+
+            outputResult('dsa-sign-output', `Signature successful!\nr = ${r}\ns = ${s}`, false);
+        },
+
+        signverf() {
+            if (this.p === 0n) {
+                outputResult('dsa-verify-output', 'Error: Generate keys first.', true);
+                return;
+            }
+            if (this.r === 0n || this.s === 0n) {
+                outputResult('dsa-verify-output', 'Error: Generate signature first.', true);
+                return;
+            }
+
+            const w = modInverse(this.s, this.q);
+            if (w === 0n) {
+                outputResult('dsa-verify-output', 'Error: modular inverse of s does not exist.', true);
+                return;
+            }
+
+            const u1 = (this.hm * w) % this.q;
+            const u2 = (this.r * w) % this.q;
+
+            const v = ((power(this.g, u1, this.p) * power(this.y, u2, this.p)) % this.p) % this.q;
+
+            if (v === this.r) {
+                outputResult('dsa-verify-output', 'Verification successful: signature is VALID.', false);
+            } else {
+                outputResult('dsa-verify-output', 'Verification failed: signature is INVALID.', true);
+            }
+        },
+
+        // 6. Permit easy reversal of actions - add reset function for DSA
+        reset() {
+            this.p = 0n; this.q = 0n; this.h = 0n; this.g = 0n;
+            this.x = 0n; this.y = 0n; this.k = 0n;
+            this.r = 0n; this.s = 0n; this.hm = 0n;
+            outputResult('dsa-keygen-output', 'Public Key y, Parameters (p, q, g): N/A');
+            outputResult('dsa-sign-output', 'Signature (r, s): N/A');
+            outputResult('dsa-verify-output', 'Verification Result: N/A');
+        }
+    };
+
+    // === Schnorr Simulator Object ===
+    const schnorrSim = {
+        p: 0n, q: 0n, g: 0n,
+        x: 0n, y: 0n,
+        k: 0n, e: 0n, s: 0n,
+        hm: 0n,
+
+        keygena() {
+            const p = BigInt(document.getElementById('schnorr-p').value);
+            const q = BigInt(document.getElementById('schnorr-q').value);
+            const g = BigInt(document.getElementById('schnorr-g').value);
+            const x = BigInt(document.getElementById('schnorr-x').value);
+
+            if (!isPrime(p)) {
+                outputResult('schnorr-keygen-output', 'Error: p must be prime.', true);
+                return;
+            }
+            if (!isPrime(q)) {
+                outputResult('schnorr-keygen-output', 'Error: q must be prime.', true);
+                return;
+            }
+            if ((p - 1n) % q !== 0n) {
+                outputResult('schnorr-keygen-output', 'Error: (p-1) must be divisible by q.', true);
+                return;
+            }
+            if (g <= 1n || g >= p - 1n) {
+                outputResult('schnorr-keygen-output', 'Error: g must be in range 1 < g < p-1.', true);
+                return;
+            }
+            if (power(g, q, p) !== 1n) {
+                outputResult('schnorr-keygen-output', 'Error: g^q mod p must be 1.', true);
+                return;
+            }
+            if (x <= 0n || x >= q - 1n) {
+                outputResult('schnorr-keygen-output', 'Error: Private key x must be 1 < x < q-1.', true);
+                return;
+            }
+
+            const y = power(g, x, p);
+
+            this.p = p; this.q = q; this.g = g; this.x = x; this.y = y;
+
+            outputResult('schnorr-keygen-output', `Schnorr Key Generation Successful!\nParameters:\np = ${p}\nq = ${q}\ng = ${g}\n\nPublic key y = ${y}`, false);
+        },
+
+        signatgena() {
+            const k = BigInt(document.getElementById('schnorr-k').value);
+            const hm = BigInt(document.getElementById('schnorr-hm').value);
+
+            if (this.p === 0n) {
+                outputResult('schnorr-sign-output', 'Error: Generate keys first.', true);
+                return;
+            }
+            if (k <= 0n || k >= this.q - 1n) {
+                outputResult('schnorr-sign-output', 'Error: k must be 1 < k < q-1.', true);
+                return;
+            }
+
+            // e = h(g^k mod p, m) simplified as (g^k + hm) mod q
+            const r = power(this.g, k, this.p);
+            const e = (r + hm) % this.q;
+            const s = (k + this.x * e) % this.q;
+
+            this.k = k;
+            this.e = e;
+            this.s = s;
+            this.hm = hm;
+
+            outputResult('schnorr-sign-output', `Signature successful!\ne = ${e}\ns = ${s}`, false);
+        },
+
+        signverf() {
+            if (this.p === 0n) {
+                outputResult('schnorr-verify-output', 'Error: Generate keys first.', true);
+                return;
+            }
+            if (this.e === 0n || this.s === 0n) {
+                outputResult('schnorr-verify-output', 'Error: Generate signature first.', true);
+                return;
+            }
+
+            const left = (power(this.g, this.s, this.p)) % this.p;
+            const right = (this.e * this.y) % this.p;
+
+            if (left === right) {
+                outputResult('schnorr-verify-output', 'Verification successful: signature is VALID.', false);
+            } else {
+                outputResult('schnorr-verify-output', 'Verification failed: signature is INVALID.', true);
+            }
+        },
+
+        reset() {
+            this.p = 0n; this.q = 0n; this.g = 0n;
+            this.x = 0n; this.y = 0n;
+            this.k = 0n; this.e = 0n; this.s = 0n; this.hm = 0n;
+            outputResult('schnorr-keygen-output', 'Public Key y, Parameters (p, q, g): N/A');
+            outputResult('schnorr-sign-output', 'Signature (e, s): N/A');
+            outputResult('schnorr-verify-output', 'Verification Result: N/A');
+        }
+    };
+
+    // 2. Enable frequent users to use shortcuts via keyboard access keys + custom keyboard support
+    document.addEventListener('keydown', (event) => {
+        // Using Alt + 1..6 for each step (1-3 DSA, 4-6 Schnorr)
+        if (event.altKey) {
+            switch (event.key) {
+                case '1': dsaSim.keygena(); break;
+                case '2': dsaSim.signatgena(); break;
+                case '3': dsaSim.signverf(); break;
+                case '4': schnorrSim.keygena(); break;
+                case '5': schnorrSim.signatgena(); break;
+                case '6': schnorrSim.signverf(); break;
+            }
+        }
+    });
+
+</script>
+
+<!-- 6. Permit easy reversal: Reset buttons -->
+<div style="max-width: 1000px; margin: 0 auto 50px; text-align: center;">
+    <button onclick="dsaSim.reset()" aria-label="Reset DSA Simulator">Reset DSA</button>
+    <button onclick="schnorrSim.reset()" aria-label="Reset Schnorr Simulator">Reset Schnorr</button>
+</div>
+
+</body>
+</html>
